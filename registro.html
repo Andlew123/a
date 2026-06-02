@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro - Negreira Airsoft Club</title>
+</head>
+<body>
+  <form id="formRegistro">
+    <input type="text" id="nuevo-usuario" placeholder="Usuario" required>
+    <input type="password" id="nueva-contra" placeholder="Contraseña" required>
+    <select id="rol-juego" required>
+      <option value="">Selecciona un rol</option>
+      <option value="jugador">Jugador</option>
+      <option value="admin">Admin</option>
+    </select>
+    <button type="submit" id="btn-registro">Registrarse</button>
+    <div id="estado-registro"></div>
+  </form>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const supabaseClient = supabase.createClient(
+      "https://wbcfszivrbuqfqnizarq.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndiY2Zzeml2cmJ1cWZxbml6YXJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4OTkyMjEsImV4cCI6MjA5NTQ3NTIyMX0.2iX7Twex3d96A9Iawg3zxvGAjFNLBqt8[...]"
+    );
+
+    document.getElementById("formRegistro").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const usuario = document.getElementById("nuevo-usuario").value.trim();
+      const contra = document.getElementById("nueva-contra").value;
+      const rol = document.getElementById("rol-juego").value;
+
+      const estado = document.getElementById("estado-registro");
+      const btn = document.getElementById("btn-registro");
+
+      btn.disabled = true;
+      estado.innerText = "Creando cuenta...";
+
+      try {
+        // Usar autenticación de Supabase en lugar de guardar contraseña
+        const { data, error: errorRegistro } = await supabaseClient.auth.signUp({
+          email: usuario + "@airsoft.club", // Genera un email del usuario
+          password: contra
+        });
+
+        if (errorRegistro) {
+          console.log(errorRegistro);
+          estado.innerText = "Error: " + errorRegistro.message;
+          btn.disabled = false;
+          return;
+        }
+
+        // Guarda el perfil del jugador
+        const { error: errorPerfil } = await supabaseClient
+          .from("jugadores")
+          .insert([{
+            usuario: usuario,
+            rol: rol,
+            puntos: 0,
+            en_partida: false,
+            tipo_entrada: "5"
+          }]);
+
+        if (errorPerfil) {
+          console.log(errorPerfil);
+          estado.innerText = "Error creando perfil";
+          btn.disabled = false;
+          return;
+        }
+
+        localStorage.setItem("usuarioRegistrado", usuario);
+        estado.innerText = "Cuenta creada ✔";
+
+        setTimeout(() => {
+          window.location.href = "perfil.html";
+        }, 1000);
+
+      } catch (err) {
+        console.log(err);
+        estado.innerText = "Error inesperado";
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
